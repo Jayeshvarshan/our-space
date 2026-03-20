@@ -75,12 +75,17 @@
 
             <!-- Input Area -->
             <div class="message-input-area">
+                <input type="file" id="media-input" accept="image/*,video/*" style="display:none;">
                 <div class="input-container">
                     <i class="ph ph-smiley"></i>
                     <input type="text" placeholder="Message..." id="message-input" autocomplete="off">
                     <div class="input-actions">
-                        <i class="ph ph-microphone"></i>
-                        <i class="ph ph-image"></i>
+                        <button class="icon-btn" id="btn-image" title="Send image or video">
+                            <i class="ph ph-image"></i>
+                        </button>
+                        <button class="icon-btn" id="btn-voice" title="Hold to record voice">
+                            <i class="ph ph-microphone"></i>
+                        </button>
                         <i class="ph ph-heart"></i>
                     </div>
                     <button id="send-btn" class="hidden">Send</button>

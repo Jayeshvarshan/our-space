@@ -5,6 +5,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     let activeChatUsername = null;
     let socket = null;
     let allUsers = [];
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
 
     const mainApp = document.getElementById("main-app");
     const chatList = document.getElementById("chat-list");
@@ -37,24 +40,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     async function initApp() {
-        // Init Socket
         socket = io();
 
         socket.on('receive_message', (msg) => {
-            // Check if message belongs to active chat
             if ((msg.sender_id === activeChatUserId && msg.receiver_id === currentUser.id) ||
                 (msg.sender_id === currentUser.id && msg.receiver_id === activeChatUserId)) {
-
-                appendMessage(msg,
-                    msg.sender_id === currentUser.id ? true : false,
-                    msg.sender_id === currentUser.id ? currentUser.avatar : activeChatAvatar
-                );
+                appendMessage(msg, msg.sender_id === currentUser.id, msg.sender_id === currentUser.id ? currentUser.avatar : activeChatAvatar);
                 scrollToBottom();
             }
-
-            // Update sidebar preview
             const otherId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
-            updateChatPreview(otherId, msg.content, msg.sender_id === currentUser.id);
+            updateChatPreview(otherId, msg.content || '📎 Media', msg.sender_id === currentUser.id);
         });
 
         socket.on('user_status', ({ userId, status }) => {
@@ -65,7 +60,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
 
-        // Load Users
         await loadUsers();
     }
 
@@ -73,14 +67,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const res = await fetch('/api/users');
             allUsers = await res.json();
-
             chatList.innerHTML = '';
-
             if (allUsers.length === 0) {
-                chatList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No other users found.</div>';
+                chatList.innerHTML = '<div class="loading-text">No other users yet.</div>';
                 return;
             }
-
             allUsers.forEach(user => {
                 const chatItem = document.createElement('div');
                 chatItem.className = 'chat-item';
@@ -88,16 +79,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 chatItem.setAttribute('data-user-id', user.id);
                 chatItem.setAttribute('data-username', user.username);
                 chatItem.setAttribute('data-avatar', user.avatar);
-
                 chatItem.innerHTML = `
                     <img src="${user.avatar}" alt="${user.username}" class="avatar">
                     <div class="chat-info">
-                        <span class="chat-name">${user.username} <span style="color:var(--text-secondary); font-size: 11px; font-weight:normal;">(${user.id})</span></span>
+                        <span class="chat-name">${user.username}</span>
                         <span class="chat-preview" id="preview-${user.id}">Tap to chat</span>
                     </div>
                     <div class="status-dot offline" id="status-${user.id}"></div>
                 `;
-
                 chatItem.addEventListener('click', () => selectChat(user.id, user.username, user.avatar));
                 chatList.appendChild(chatItem);
             });
@@ -106,7 +95,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // Back button — return to chat list
+    // Back button
     document.getElementById('back-btn').addEventListener('click', () => {
         viewActiveChat.classList.add('hidden');
         viewChatList.classList.remove('hidden');
@@ -114,7 +103,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     async function selectChat(userId, username, avatar) {
-        // Active handling
         document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active-chat'));
         document.getElementById(`chat-item-${userId}`).classList.add('active-chat');
 
@@ -122,54 +110,61 @@ document.addEventListener("DOMContentLoaded", async () => {
         activeChatUsername = username;
         activeChatAvatar = avatar;
 
-        // Switch views
         viewChatList.classList.add('hidden');
         viewActiveChat.classList.remove('hidden');
         bottomNav.style.display = 'none';
 
-        // Update header
         document.getElementById('header-name').textContent = username;
         document.getElementById('header-avatar').src = avatar;
 
-        // Fetch messages
-        chatMessages.innerHTML = '<div style="text-align:center; margin-top: 20px;">Loading messages...</div>';
+        chatMessages.innerHTML = '<div class="loading-text">Loading messages...</div>';
         try {
             const res = await fetch(`/api/messages/${userId}`);
             const messages = await res.json();
-
             chatMessages.innerHTML = '';
-
             if (messages.length === 0) {
-                const timestamp = document.createElement("div");
-                timestamp.className = "message-timestamp";
-                timestamp.textContent = "Start of a new conversation";
-                chatMessages.appendChild(timestamp);
+                const ts = document.createElement("div");
+                ts.className = "message-timestamp";
+                ts.textContent = "Start of a new conversation";
+                chatMessages.appendChild(ts);
             } else {
                 messages.forEach(msg => {
                     const isSent = msg.sender_id === currentUser.id;
-                    const msgAvatar = isSent ? currentUser.avatar : activeChatAvatar;
-                    appendMessage(msg, isSent, msgAvatar);
+                    appendMessage(msg, isSent, isSent ? currentUser.avatar : activeChatAvatar);
                 });
                 scrollToBottom();
             }
         } catch (error) {
-            chatMessages.innerHTML = '<div style="text-align:center; color:red; margin-top:20px;">Error loading messages</div>';
+            chatMessages.innerHTML = '<div class="loading-text" style="color:red;">Error loading messages</div>';
         }
     }
 
     function appendMessage(msg, isSent, avatarSrc) {
-        const messageWrapper = document.createElement("div");
-        messageWrapper.className = `message ${isSent ? 'sent' : 'received'}`;
+        const wrapper = document.createElement("div");
+        wrapper.className = `message ${isSent ? 'sent' : 'received'}`;
 
-        // Only show avatar for received messages to match Instagram style
-        const avatarHtml = !isSent ? `<img src="${avatarSrc}" alt="User" class="avatar-tiny message-avatar">` : '';
+        const avatarHtml = !isSent ? `<img src="${avatarSrc}" alt="User" class="avatar-tiny">` : '';
+        let contentHtml = '';
 
-        messageWrapper.innerHTML = `
-            ${avatarHtml}
-            <div class="message-bubble">${msg.content}</div>
-        `;
+        if (msg.media_url) {
+            const type = msg.media_type || '';
+            if (type.startsWith('image')) {
+                contentHtml = `<img src="${msg.media_url}" class="media-img" onclick="window.open('${msg.media_url}')">`;
+            } else if (type.startsWith('video')) {
+                contentHtml = `<video src="${msg.media_url}" class="media-video" controls playsinline></video>`;
+            } else if (type.startsWith('audio')) {
+                contentHtml = `<audio src="${msg.media_url}" controls class="media-audio"></audio>`;
+            } else {
+                contentHtml = `<a href="${msg.media_url}" target="_blank" class="media-link">📎 View file</a>`;
+            }
+        }
 
-        chatMessages.appendChild(messageWrapper);
+        if (msg.content) {
+            contentHtml += `<div class="message-text">${msg.content}</div>`;
+        }
+
+        wrapper.innerHTML = `${avatarHtml}<div class="message-bubble">${contentHtml}</div>`;
+        chatMessages.appendChild(wrapper);
     }
 
     function updateChatPreview(userId, text, isYou) {
@@ -177,10 +172,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const chatItem = document.getElementById(`chat-item-${userId}`);
         if (previewEl && chatItem) {
             previewEl.textContent = isYou ? `You: ${text}` : text;
-            previewEl.style.fontWeight = isYou ? 'normal' : '600';
-            previewEl.style.color = isYou ? 'var(--text-secondary)' : 'var(--text-primary)';
-
-            // Move item to top
             chatList.insertBefore(chatItem, chatList.firstChild);
         }
     }
@@ -189,25 +180,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Search Logic
-    const searchInput = document.getElementById("user-search-input");
-    searchInput.addEventListener("input", (e) => {
+    // Search
+    document.getElementById("user-search-input").addEventListener("input", (e) => {
         const query = e.target.value.toLowerCase().trim();
-        const chatItems = document.querySelectorAll(".chat-item");
-
-        chatItems.forEach(item => {
+        document.querySelectorAll(".chat-item").forEach(item => {
             const username = item.getAttribute("data-username").toLowerCase();
-            const userId = item.getAttribute("data-user-id").toLowerCase();
-
-            if (username.includes(query) || userId.includes(query)) {
-                item.style.display = "flex";
-            } else {
-                item.style.display = "none";
-            }
+            item.style.display = username.includes(query) ? "flex" : "none";
         });
     });
 
-    // Sending Logic
+    // ====== SEND TEXT ======
     const messageInput = document.getElementById("message-input");
     const sendBtn = document.getElementById("send-btn");
     const inputActions = document.querySelector(".input-actions");
@@ -225,19 +207,91 @@ document.addEventListener("DOMContentLoaded", async () => {
     function handleSendMessage() {
         const content = messageInput.value.trim();
         if (content === "" || !activeChatUserId) return;
-
-        socket.emit('send_message', {
-            receiverId: activeChatUserId,
-            content: content
-        });
-
+        socket.emit('send_message', { receiverId: activeChatUserId, content });
         messageInput.value = "";
         sendBtn.classList.add("hidden");
         inputActions.classList.remove("hidden");
     }
 
     sendBtn.addEventListener("click", handleSendMessage);
-    messageInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") handleSendMessage();
+    messageInput.addEventListener("keypress", (e) => { if (e.key === "Enter") handleSendMessage(); });
+
+    // ====== SEND IMAGE / VIDEO ======
+    const mediaInput = document.getElementById("media-input");
+    document.getElementById("btn-image").addEventListener("click", () => {
+        mediaInput.accept = "image/*,video/*";
+        mediaInput.click();
+    });
+
+    mediaInput.addEventListener("change", async () => {
+        const file = mediaInput.files[0];
+        if (!file || !activeChatUserId) return;
+
+        const formData = new FormData();
+        formData.append("media", file);
+
+        try {
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.url) {
+                socket.emit('send_message', {
+                    receiverId: activeChatUserId,
+                    media_url: data.url,
+                    media_type: data.type
+                });
+            }
+        } catch (err) {
+            console.error("Upload failed:", err);
+        }
+        mediaInput.value = "";
+    });
+
+    // ====== VOICE RECORDING ======
+    const voiceBtn = document.getElementById("btn-voice");
+
+    voiceBtn.addEventListener("click", async () => {
+        if (!isRecording) {
+            // Start recording
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const formData = new FormData();
+                    formData.append("media", blob, "voice.webm");
+
+                    try {
+                        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.url) {
+                            socket.emit('send_message', {
+                                receiverId: activeChatUserId,
+                                media_url: data.url,
+                                media_type: 'audio/webm'
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Voice upload failed:", err);
+                    }
+
+                    stream.getTracks().forEach(t => t.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                voiceBtn.innerHTML = '<i class="ph-fill ph-stop-circle" style="color:#ff4f7b;"></i>';
+            } catch (err) {
+                alert("Microphone permission denied. Please allow microphone access.");
+            }
+        } else {
+            // Stop recording
+            mediaRecorder.stop();
+            isRecording = false;
+            voiceBtn.innerHTML = '<i class="ph ph-microphone"></i>';
+        }
     });
 });

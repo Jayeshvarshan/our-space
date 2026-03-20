@@ -6,7 +6,28 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const db = require('./database');
+
+// Cloudinary config
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Multer + Cloudinary storage
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: async (req, file) => ({
+        folder: 'our-space-chat',
+        resource_type: file.mimetype.startsWith('video') ? 'video' : (file.mimetype.startsWith('audio') ? 'video' : 'image'),
+        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'ogg', 'mp3', 'wav', 'webp'],
+    }),
+});
+const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB limit
 
 const app = express();
 const server = http.createServer(app);
@@ -156,6 +177,13 @@ app.get('/api/messages/:otherUserId', (req, res) => {
     });
 });
 
+// Upload media (image / video / voice)
+app.post('/api/upload', upload.single('media'), async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    res.json({ url: req.file.path, type: req.file.mimetype });
+});
+
 // ------ SOCKET.IO Real-time Chat ------
 
 const connectedUsers = new Map(); // Maps userId to socket.id
@@ -172,13 +200,14 @@ io.on('connection', (socket) => {
         io.emit('user_status', { userId, status: 'online' });
 
         socket.on('send_message', (data) => {
-            const { receiverId, content } = data;
+            const { receiverId, content, media_url, media_type } = data;
 
-            if (!receiverId || !content) return;
+            if (!receiverId || (!content && !media_url)) return;
 
             // Save to database
-            db.query(`INSERT INTO messages (sender_id, receiver_id, content) VALUES ($1, $2, $3) RETURNING id`,
-                [userId, receiverId, content],
+            db.query(
+                `INSERT INTO messages (sender_id, receiver_id, content, media_url, media_type) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                [userId, receiverId, content || null, media_url || null, media_type || null],
                 (err, result) => {
                     if (err) return console.error(err);
 
@@ -186,7 +215,9 @@ io.on('connection', (socket) => {
                         id: result.rows[0].id,
                         sender_id: userId,
                         receiver_id: receiverId,
-                        content: content,
+                        content: content || null,
+                        media_url: media_url || null,
+                        media_type: media_type || null,
                         timestamp: new Date().toISOString()
                     };
 

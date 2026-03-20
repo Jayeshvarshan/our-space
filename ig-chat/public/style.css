@@ -400,3 +400,57 @@ body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: #363636; border-radius: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ====== MEDIA MESSAGES ====== */
+.media-img {
+    max-width: 220px;
+    max-height: 280px;
+    border-radius: 12px;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+}
+
+.media-video {
+    max-width: 220px;
+    border-radius: 12px;
+    display: block;
+    background: #000;
+}
+
+.media-audio {
+    width: 200px;
+    height: 36px;
+    border-radius: 20px;
+    outline: none;
+}
+
+.media-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.message-text {
+    margin-top: 4px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Icon buttons in input area */
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.icon-btn:hover {
+    color: var(--accent-blue);
+}
