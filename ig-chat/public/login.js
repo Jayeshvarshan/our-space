@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Detect Capacitor/Mobile for performance optimization
+    const isMobile = !!window.Capacitor;
+    if (isMobile) {
+        document.body.classList.add('low-motion');
+    }
+
     // Check if already logged in
     fetch('/api/currentUser')
         .then(res => {

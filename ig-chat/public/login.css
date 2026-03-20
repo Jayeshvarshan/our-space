@@ -131,6 +131,24 @@ body::before {
 .sparkle:nth-child(4) { top: 78%; right: 25%; }
 .sparkle:nth-child(4)::before { animation-delay: 0.5s; font-size: 22px; }
 
+/* Mobile Performance Optimization (Low Motion) */
+.low-motion .hearts-container,
+.low-motion .sparkle {
+    display: none !important;
+}
+
+.low-motion .login-box {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(139, 0, 87, 0.9); /* Solid-ish fallback */
+    animation: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.low-motion body {
+    background: #8B0057; /* Solid background for perfect performance */
+}
+
 /* Login container */
 .login-container {
     position: relative;
