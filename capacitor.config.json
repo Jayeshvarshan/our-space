@@ -1,0 +1,6 @@
+{
+  "appId": "com.ourspace.app",
+  "appName": "Our Space",
+  "webDir": "ig-chat/public",
+  "bundledWebRuntime": false
+}
