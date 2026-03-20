@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ig-chat/server.js",
+    "start": "node index.js",
     "tunnel": "npx localtunnel --port 3000 --subdomain ig-chat-tharsini-app"
   },
   "keywords": [],
