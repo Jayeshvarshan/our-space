@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Our Space</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,95 +25,81 @@
 
 <body>
     <div class="app-container" style="display: none;" id="main-app">
-        <!-- Navigation Sidebar -->
-        <nav class="sidebar">
-            <div class="logo">
-                <img src="/assets/logo.jpg" alt="Our Space Logo" class="custom-logo">
-                <span style="font-weight: 600; font-size: 1.2rem; margin-left: 8px;">Our Space</span>
+
+        <!-- ====== CHAT LIST VIEW ====== -->
+        <div class="view" id="view-chat-list">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <img src="" alt="Me" class="avatar-small" id="current-user-avatar">
+                    <span class="header-username" id="sidebar-username">Username</span>
+                    <i class="ph ph-caret-down" style="font-size:14px; color: var(--text-secondary);"></i>
+                </div>
+                <i class="ph ph-note-pencil header-icon" title="New Message"></i>
+            </header>
+
+            <!-- Search -->
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" id="user-search-input" placeholder="Search">
+                </div>
             </div>
-            <ul class="nav-links">
-                <li class="active-nav"><a href="#"><i class="ph-fill ph-chat-circle-dots"></i><span class="bold">Messages</span></a></li>
-                <li>
-                    <a href="#" class="profile-link">
-                        <img src="" alt="Profile" class="avatar-small" id="current-user-avatar">
-                        <span id="current-user-name">Profile</span>
-                    </a>
-                </li>
-            </ul>
-            <div class="more-options">
-                <a href="#" id="logout-btn"><i class="ph ph-sign-out"></i><span>Log Out</span></a>
+
+            <!-- Chat List -->
+            <div class="chat-list" id="chat-list">
+                <div class="loading-text">Loading chats...</div>
             </div>
+        </div>
+
+        <!-- ====== ACTIVE CHAT VIEW ====== -->
+        <div class="view hidden" id="view-active-chat">
+            <!-- Chat Header -->
+            <div class="chat-window-header">
+                <div class="header-left">
+                    <button class="back-btn" id="back-btn"><i class="ph ph-arrow-left"></i></button>
+                    <img src="" alt="User" class="avatar-small" id="header-avatar">
+                    <div>
+                        <div class="header-name" id="header-name">Select a chat</div>
+                        <div class="header-status" id="header-status">Active</div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <i class="ph ph-phone"></i>
+                    <i class="ph ph-video-camera"></i>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="chat-messages" id="chat-messages"></div>
+
+            <!-- Input Area -->
+            <div class="message-input-area">
+                <div class="input-container">
+                    <i class="ph ph-smiley"></i>
+                    <input type="text" placeholder="Message..." id="message-input" autocomplete="off">
+                    <div class="input-actions">
+                        <i class="ph ph-microphone"></i>
+                        <i class="ph ph-image"></i>
+                        <i class="ph ph-heart"></i>
+                    </div>
+                    <button id="send-btn" class="hidden">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== BOTTOM NAVIGATION ====== -->
+        <nav class="bottom-nav" id="bottom-nav">
+            <a href="#" class="nav-item"><i class="ph ph-house"></i></a>
+            <a href="#" class="nav-item"><i class="ph ph-play-circle"></i></a>
+            <a href="#" class="nav-item active"><i class="ph-fill ph-paper-plane-tilt"></i></a>
+            <a href="#" class="nav-item"><i class="ph ph-magnifying-glass"></i></a>
+            <a href="#" class="nav-item" id="profile-nav">
+                <img src="" alt="Me" class="nav-avatar" id="current-user-name">
+            </a>
+            <a href="#" class="nav-item" id="logout-btn"><i class="ph ph-sign-out"></i></a>
         </nav>
 
-        <!-- Messages Section -->
-        <main class="messages-container">
-            <!-- Sidebar for chats -->
-            <section class="chats-sidebar">
-                <div class="chats-header">
-                    <h2 id="sidebar-username">Username</h2>
-                    <i class="ph ph-note-pencil new-chat-icon"></i>
-                </div>
-
-                <div class="search-container">
-                    <div class="search-box">
-                        <i class="ph ph-magnifying-glass"></i>
-                        <input type="text" id="user-search-input" placeholder="Search by name or User ID...">
-                    </div>
-                </div>
-
-                <div class="chats-filter">
-                    <span class="active">Primary</span>
-                    <span>General</span>
-                    <span>Requests</span>
-                </div>
-
-                <div class="chat-list" id="chat-list">
-                    <!-- Dynamic chat users will be injected here -->
-                    <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Loading chats...</div>
-                </div>
-            </section>
-
-            <!-- Active Chat Area -->
-            <section class="active-chat-area" id="active-chat-area" style="display: none;">
-                <div class="chat-window-header">
-                    <div class="header-user-info">
-                        <img src="" alt="User" class="avatar-small" id="header-avatar">
-                        <span class="header-name" id="header-name">Select a chat</span>
-                    </div>
-                    <div class="header-actions">
-                        <i class="ph ph-phone"></i>
-                        <i class="ph ph-video-camera"></i>
-                        <i class="ph ph-info"></i>
-                    </div>
-                </div>
-
-                <div class="chat-messages" id="chat-messages">
-                    <!-- Dynamic messages -->
-                </div>
-
-                <div class="message-input-area">
-                    <div class="input-container">
-                        <i class="ph ph-smiley"></i>
-                        <input type="text" placeholder="Message..." id="message-input" autocomplete="off">
-                        <div class="input-actions">
-                            <i class="ph ph-microphone"></i>
-                            <i class="ph ph-image"></i>
-                            <i class="ph ph-heart"></i>
-                        </div>
-                        <button id="send-btn" class="hidden">Send</button>
-                    </div>
-                </div>
-            </section>
-
-            <section class="active-chat-area" id="no-chat-selected"
-                style="justify-content: center; align-items: center; text-align: center;">
-                <i class="ph ph-paper-plane-tilt"
-                    style="font-size: 64px; border: 2px solid var(--text-primary); border-radius: 50%; padding: 15px; margin-bottom: 20px;"></i>
-                <h3 style="font-size: 20px; font-weight: 500;">Your Messages</h3>
-                <p style="color: var(--text-secondary); margin-top: 10px;">Send private photos and messages to a friend
-                    or group.</p>
-            </section>
-        </main>
     </div>
     <script src="script.js"></script>
 </body>

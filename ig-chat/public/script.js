@@ -9,8 +9,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const mainApp = document.getElementById("main-app");
     const chatList = document.getElementById("chat-list");
     const chatMessages = document.getElementById("chat-messages");
-    const activeChatArea = document.getElementById("active-chat-area");
-    const noChatSelectedArea = document.getElementById("no-chat-selected");
+    const viewChatList = document.getElementById("view-chat-list");
+    const viewActiveChat = document.getElementById("view-active-chat");
+    const bottomNav = document.getElementById("bottom-nav");
 
     // Auth Check
     try {
@@ -20,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         mainApp.style.display = 'flex';
         document.getElementById('sidebar-username').textContent = currentUser.username;
-        document.getElementById('current-user-name').textContent = currentUser.username;
+        document.getElementById('current-user-name').src = currentUser.avatar;
         document.getElementById('current-user-avatar').src = currentUser.avatar;
 
         initApp();
@@ -105,6 +106,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    // Back button — return to chat list
+    document.getElementById('back-btn').addEventListener('click', () => {
+        viewActiveChat.classList.add('hidden');
+        viewChatList.classList.remove('hidden');
+        bottomNav.style.display = 'flex';
+    });
+
     async function selectChat(userId, username, avatar) {
         // Active handling
         document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active-chat'));
@@ -114,8 +122,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         activeChatUsername = username;
         activeChatAvatar = avatar;
 
-        noChatSelectedArea.style.display = 'none';
-        activeChatArea.style.display = 'flex';
+        // Switch views
+        viewChatList.classList.add('hidden');
+        viewActiveChat.classList.remove('hidden');
+        bottomNav.style.display = 'none';
 
         // Update header
         document.getElementById('header-name').textContent = username;
