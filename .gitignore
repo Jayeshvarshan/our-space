@@ -1,0 +1,5 @@
+node_modules/
+.env
+ig-chat/chat.db
+*.log
+*.txt

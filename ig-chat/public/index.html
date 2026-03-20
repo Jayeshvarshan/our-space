@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Space</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js');
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div class="app-container" style="display: none;" id="main-app">
+        <!-- Navigation Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/assets/logo.jpg" alt="Our Space Logo" class="custom-logo">
+                <span style="font-weight: 600; font-size: 1.2rem; margin-left: 8px;">Our Space</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#"><i class="ph ph-house"></i><span>Home</span></a></li>
+                <li><a href="#"><i class="ph ph-magnifying-glass"></i><span>Search</span></a></li>
+                <li><a href="#"><i class="ph ph-compass"></i><span>Explore</span></a></li>
+                <li><a href="#"><i class="ph ph-film-strip"></i><span>Reels</span></a></li>
+                <li class="active-nav"><a href="#"><i class="ph-fill ph-chat-circle-dots"></i><span
+                            class="bold">Messages</span></a></li>
+                <li><a href="#"><i class="ph ph-heart"></i><span>Notifications</span></a></li>
+                <li><a href="#"><i class="ph ph-plus-square"></i><span>Create</span></a></li>
+                <li>
+                    <a href="#" class="profile-link">
+                        <img src="" alt="Profile" class="avatar-small" id="current-user-avatar">
+                        <span id="current-user-name">Profile</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="more-options">
+                <a href="#" id="logout-btn"><i class="ph ph-sign-out"></i><span>Log Out</span></a>
+            </div>
+        </nav>
+
+        <!-- Messages Section -->
+        <main class="messages-container">
+            <!-- Sidebar for chats -->
+            <section class="chats-sidebar">
+                <div class="chats-header">
+                    <h2 id="sidebar-username">Username</h2>
+                    <i class="ph ph-note-pencil new-chat-icon"></i>
+                </div>
+
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" id="user-search-input" placeholder="Search by name or User ID...">
+                    </div>
+                </div>
+
+                <div class="chats-filter">
+                    <span class="active">Primary</span>
+                    <span>General</span>
+                    <span>Requests</span>
+                </div>
+
+                <div class="chat-list" id="chat-list">
+                    <!-- Dynamic chat users will be injected here -->
+                    <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Loading chats...</div>
+                </div>
+            </section>
+
+            <!-- Active Chat Area -->
+            <section class="active-chat-area" id="active-chat-area" style="display: none;">
+                <div class="chat-window-header">
+                    <div class="header-user-info">
+                        <img src="" alt="User" class="avatar-small" id="header-avatar">
+                        <span class="header-name" id="header-name">Select a chat</span>
+                    </div>
+                    <div class="header-actions">
+                        <i class="ph ph-phone"></i>
+                        <i class="ph ph-video-camera"></i>
+                        <i class="ph ph-info"></i>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Dynamic messages -->
+                </div>
+
+                <div class="message-input-area">
+                    <div class="input-container">
+                        <i class="ph ph-smiley"></i>
+                        <input type="text" placeholder="Message..." id="message-input" autocomplete="off">
+                        <div class="input-actions">
+                            <i class="ph ph-microphone"></i>
+                            <i class="ph ph-image"></i>
+                            <i class="ph ph-heart"></i>
+                        </div>
+                        <button id="send-btn" class="hidden">Send</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="active-chat-area" id="no-chat-selected"
+                style="justify-content: center; align-items: center; text-align: center;">
+                <i class="ph ph-paper-plane-tilt"
+                    style="font-size: 64px; border: 2px solid var(--text-primary); border-radius: 50%; padding: 15px; margin-bottom: 20px;"></i>
+                <h3 style="font-size: 20px; font-weight: 500;">Your Messages</h3>
+                <p style="color: var(--text-secondary); margin-top: 10px;">Send private photos and messages to a friend
+                    or group.</p>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

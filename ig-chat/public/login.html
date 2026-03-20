@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Space - Login</title>
+    <link rel="stylesheet" href="login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js');
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="logo">
+                <img src="/assets/logo.jpg" alt="Our Space Logo" class="custom-login-logo">
+                <h1>Our Space</h1>
+            </div>
+
+            <div id="error-message" class="error-message hidden"></div>
+            <div id="success-message" class="success-message hidden"></div>
+
+            <!-- Login Form -->
+            <form id="login-form">
+                <div class="input-group">
+                    <input type="text" id="login-email-id" placeholder="Email or User ID" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="login-password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="primary-btn">Log In</button>
+            </form>
+
+            <div class="divider">
+                <span>OR</span>
+            </div>
+
+            <div class="switch-form">
+                Don't have an account? <span id="show-register">Sign up</span>
+            </div>
+        </div>
+
+        <!-- Register Form (Hidden by default) -->
+        <div class="login-box hidden" id="register-box">
+            <div class="logo">
+                <img src="/assets/logo.jpg" alt="Our Space Logo" class="custom-login-logo">
+                <h1>Our Space</h1>
+            </div>
+
+            <p class="subtitle">Sign up to join our private community.</p>
+
+            <div id="reg-error-message" class="error-message hidden"></div>
+
+            <form id="register-form">
+                <div class="input-group">
+                    <input type="email" id="reg-email" placeholder="Email" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="reg-username" placeholder="Full Name" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="reg-password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="primary-btn">Sign Up</button>
+            </form>
+
+            <div class="switch-form">
+                Have an account? <span id="show-login">Log in</span>
+            </div>
+        </div>
+    </div>
+    <script src="login.js"></script>
+</body>
+
+</html>
