@@ -28,17 +28,17 @@
 
         <!-- ====== CHAT LIST VIEW ====== -->
         <div class="view" id="view-chat-list">
-            <!-- Top Header -->
             <header class="top-header">
                 <div class="header-left">
-                    <img src="" alt="Me" class="avatar-small" id="current-user-avatar">
+                    <div class="avatar-wrapper" id="open-profile-btn">
+                        <img src="" alt="Me" class="avatar-small" id="current-user-avatar">
+                        <div class="avatar-edit-overlay"><i class="ph ph-pencil"></i></div>
+                    </div>
                     <span class="header-username" id="sidebar-username">Username</span>
-                    <i class="ph ph-caret-down" style="font-size:14px; color: var(--text-secondary);"></i>
                 </div>
                 <i class="ph ph-note-pencil header-icon" title="New Message"></i>
             </header>
 
-            <!-- Search -->
             <div class="search-container">
                 <div class="search-box">
                     <i class="ph ph-magnifying-glass"></i>
@@ -46,7 +46,6 @@
                 </div>
             </div>
 
-            <!-- Chat List -->
             <div class="chat-list" id="chat-list">
                 <div class="loading-text">Loading chats...</div>
             </div>
@@ -54,39 +53,47 @@
 
         <!-- ====== ACTIVE CHAT VIEW ====== -->
         <div class="view hidden" id="view-active-chat">
-            <!-- Chat Header -->
             <div class="chat-window-header">
                 <div class="header-left">
                     <button class="back-btn" id="back-btn"><i class="ph ph-arrow-left"></i></button>
                     <img src="" alt="User" class="avatar-small" id="header-avatar">
-                    <div>
+                    <div class="user-header-info">
                         <div class="header-name" id="header-name">Select a chat</div>
-                        <div class="header-status" id="header-status">Active</div>
+                        <div id="chat-status" class="header-status">Offline</div>
+                        <div id="typing-indicator" class="typing-indicator hidden">typing...</div>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <i class="ph ph-phone"></i>
-                    <i class="ph ph-video-camera"></i>
+                    <button class="icon-btn" id="btn-call-audio" title="Voice Call"><i class="ph ph-phone"></i></button>
+                    <button class="icon-btn" id="btn-call-video" title="Video Call"><i class="ph ph-video-camera"></i></button>
+                    <button class="icon-btn" id="btn-chat-options" title="More Options"><i class="ph ph-dots-three-vertical"></i></button>
                 </div>
             </div>
 
-            <!-- Messages -->
+            <!-- Dropdown Options -->
+            <div class="dropdown-menu hidden" id="chat-options-menu">
+                <button id="theme-option-btn"><i class="ph ph-paint-bucket"></i> Chat Theme</button>
+                <button id="notes-option-btn"><i class="ph ph-note"></i> Chat Notes</button>
+                <button id="delete-chat-btn"><i class="ph ph-trash"></i> Delete Chat</button>
+            </div>
+
             <div class="chat-messages" id="chat-messages"></div>
+
+            <!-- Sticker Panel -->
+            <div class="sticker-panel hidden" id="sticker-panel">
+                <div class="sticker-grid" id="sticker-grid"></div>
+            </div>
 
             <!-- Input Area -->
             <div class="message-input-area">
                 <input type="file" id="media-input" accept="image/*,video/*" style="display:none;">
                 <div class="input-container">
-                    <i class="ph ph-smiley"></i>
+                    <button class="icon-btn" id="btn-stickers" title="Stickers"><i class="ph ph-sticker"></i></button>
                     <input type="text" placeholder="Message..." id="message-input" autocomplete="off">
                     <div class="input-actions">
-                        <button class="icon-btn" id="btn-image" title="Send image or video">
-                            <i class="ph ph-image"></i>
-                        </button>
-                        <button class="icon-btn" id="btn-voice" title="Hold to record voice">
-                            <i class="ph ph-microphone"></i>
-                        </button>
-                        <i class="ph ph-heart"></i>
+                        <button class="icon-btn" id="btn-image" title="Send image or video"><i class="ph ph-image"></i></button>
+                        <button class="icon-btn" id="btn-draw" title="Drawing Board"><i class="ph ph-pencil-line"></i></button>
+                        <button class="icon-btn" id="btn-voice" title="Record voice"><i class="ph ph-microphone"></i></button>
                     </div>
                     <button id="send-btn" class="hidden">Send</button>
                 </div>
@@ -104,6 +111,107 @@
             </a>
             <a href="#" class="nav-item" id="logout-btn"><i class="ph ph-sign-out"></i></a>
         </nav>
+
+        <!-- ====== PROFILE MODAL ====== -->
+        <div class="modal-overlay hidden" id="profile-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>Your Profile</h3>
+                    <button class="modal-close" id="close-profile-modal"><i class="ph ph-x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="pfp-upload-area" id="pfp-upload-area">
+                        <img src="" alt="Profile" class="avatar-large" id="profile-avatar-preview">
+                        <div class="pfp-overlay"><i class="ph ph-camera"></i><span>Change Photo</span></div>
+                        <input type="file" id="pfp-input" accept="image/*" style="display:none;">
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-username" id="profile-username"></div>
+                    </div>
+                    <div id="pfp-upload-status" style="text-align:center; font-size:13px; color: var(--accent-blue); margin-top:8px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== CHAT THEMES MODAL ====== -->
+        <div class="modal-overlay hidden" id="theme-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>💫 Chat Theme</h3>
+                    <button class="modal-close" id="close-theme-modal"><i class="ph ph-x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:13px; color: var(--text-secondary); margin-bottom:12px;">Pick a theme for this chat:</p>
+                    <div class="theme-grid" id="theme-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== CHAT NOTES MODAL ====== -->
+        <div class="modal-overlay hidden" id="notes-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>📝 Chat Notes</h3>
+                    <button class="modal-close" id="close-notes-modal"><i class="ph ph-x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="chat-notes-text" placeholder="Write a note about this chat..." rows="6" style="width:100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius:10px; padding:12px; font-size:14px; resize:none;"></textarea>
+                    <button class="primary-btn" id="save-notes-btn" style="margin-top:12px; width:100%;">Save Note 💾</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== DRAWING BOARD MODAL ====== -->
+        <div class="modal-overlay hidden" id="drawing-modal">
+            <div class="modal drawing-modal">
+                <div class="modal-header" style="flex-wrap:wrap; gap:8px;">
+                    <h3>🎨 Drawing Board</h3>
+                    <div class="drawing-tools">
+                        <input type="color" id="draw-color" value="#ff4f7b" title="Pen Color">
+                        <input type="range" id="draw-size" min="2" max="30" value="6" title="Brush Size">
+                        <button class="icon-btn" id="draw-eraser" title="Eraser"><i class="ph ph-eraser"></i></button>
+                        <button class="icon-btn" id="draw-clear" title="Clear"><i class="ph ph-trash"></i></button>
+                    </div>
+                    <button class="modal-close" id="close-drawing-modal"><i class="ph ph-x"></i></button>
+                </div>
+                <div class="modal-body" style="padding:0; overflow:hidden;">
+                    <canvas id="draw-canvas" style="display:block; touch-action:none;"></canvas>
+                </div>
+                <div style="padding:12px; display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="secondary-btn" id="close-drawing-modal-cancel">Cancel</button>
+                    <button class="primary-btn" id="send-drawing-btn">Send Drawing 🎨</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== CALL OVERLAY ====== -->
+        <div class="call-overlay hidden" id="call-overlay">
+            <video id="remote-video" autoplay playsinline class="remote-video"></video>
+            <video id="local-video" autoplay muted playsinline class="local-video"></video>
+            <div class="call-info">
+                <img src="" alt="Caller" class="call-avatar" id="call-avatar">
+                <div class="call-name" id="call-name">Username</div>
+                <div class="call-status" id="call-status">Calling...</div>
+            </div>
+            <div class="call-actions">
+                <button class="call-btn mute-btn" id="call-mute-btn"><i class="ph ph-microphone-slash"></i></button>
+                <button class="call-btn end-btn" id="call-end-btn"><i class="ph ph-phone-x"></i></button>
+                <button class="call-btn speaker-btn" id="call-speaker-btn"><i class="ph ph-speaker-high"></i></button>
+            </div>
+        </div>
+
+        <!-- Incoming Call Banner -->
+        <div class="incoming-call-banner hidden" id="incoming-call-banner">
+            <img src="" alt="Caller" class="avatar-small" id="incoming-caller-avatar">
+            <div>
+                <div id="incoming-caller-name" style="font-weight:600;">Unknown</div>
+                <div style="font-size:12px; color: var(--text-secondary);">Incoming Call...</div>
+            </div>
+            <div class="incoming-call-btns">
+                <button class="call-btn-sm accept-btn" id="accept-call-btn"><i class="ph ph-phone"></i></button>
+                <button class="call-btn-sm reject-btn" id="reject-call-btn"><i class="ph ph-phone-x"></i></button>
+            </div>
+        </div>
 
     </div>
     <script src="script.js"></script>

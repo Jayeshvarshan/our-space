@@ -149,13 +149,41 @@ app.get('/api/currentUser', (req, res) => {
     });
 });
 
+// Update Profile Picture (Avatar)
+app.post('/api/user/avatar', upload.single('media'), async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ error: 'Not authenticated' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    const avatarUrl = req.file.path;
+    db.query(`UPDATE users SET avatar = $1 WHERE id = $2`, [avatarUrl, req.session.userId], (err) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        res.json({ message: 'Avatar updated successfully', avatarUrl });
+    });
+});
+
 // Get List of other users to chat with
 app.get('/api/users', (req, res) => {
     if (!req.session.userId) return res.status(401).json({ error: 'Not authenticated' });
 
-    db.query(`SELECT id, username, avatar FROM users WHERE id != $1`, [req.session.userId], (err, result) => {
+    db.query(`SELECT id, username, avatar, last_seen FROM users WHERE id != $1`, [req.session.userId], (err, result) => {
         if (err) return res.status(500).json({ error: 'Database error' });
         res.json(result.rows);
+    });
+});
+
+// Delete Chat / Clear History
+app.delete('/api/messages/:otherUserId', (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ error: 'Not authenticated' });
+    const currentUserId = req.session.userId;
+    const { otherUserId } = req.params;
+
+    db.query(`
+        DELETE FROM messages 
+        WHERE (sender_id = $1 AND receiver_id = $2) 
+           OR (sender_id = $3 AND receiver_id = $4)
+    `, [currentUserId, otherUserId, otherUserId, currentUserId], (err, result) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        res.json({ message: 'Chat history cleared successfully' });
     });
 });
 
@@ -196,8 +224,60 @@ io.on('connection', (socket) => {
         connectedUsers.set(userId, socket.id);
         console.log(`User ${userId} connected. Socket: ${socket.id}`);
 
-        // Broadcast online status
-        io.emit('user_status', { userId, status: 'online' });
+        // Broadcast online status and update last_seen
+        db.query(`UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE id = $1`, [userId]);
+        io.emit('user_status', { userId, status: 'online', lastSeen: new Date().toISOString() });
+
+        // Typing indicator
+        socket.on('typing', (data) => {
+            const receiverSocketId = connectedUsers.get(data.receiverId);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('user_typing', { userId });
+            }
+        });
+
+        socket.on('stop_typing', (data) => {
+            const receiverSocketId = connectedUsers.get(data.receiverId);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('user_stop_typing', { userId });
+            }
+        });
+
+        // Edit Message
+        socket.on('edit_message', (data) => {
+            const { messageId, newContent, receiverId } = data;
+            db.query(
+                `UPDATE messages SET content = $1, is_edited = TRUE WHERE id = $2 AND sender_id = $3`,
+                [newContent, messageId, userId],
+                (err) => {
+                    if (err) return console.error(err);
+                    const updatePayload = { messageId, newContent, isEdited: true };
+                    socket.emit('message_updated', updatePayload);
+                    const receiverSocketId = connectedUsers.get(receiverId);
+                    if (receiverSocketId) {
+                        io.to(receiverSocketId).emit('message_updated', updatePayload);
+                    }
+                }
+            );
+        });
+
+        // Unsend Message
+        socket.on('unsend_message', (data) => {
+            const { messageId, receiverId } = data;
+            db.query(
+                `UPDATE messages SET is_deleted = TRUE, content = NULL, media_url = NULL WHERE id = $1 AND sender_id = $2`,
+                [messageId, userId],
+                (err) => {
+                    if (err) return console.error(err);
+                    const deletePayload = { messageId, isDeleted: true };
+                    socket.emit('message_deleted', deletePayload);
+                    const receiverSocketId = connectedUsers.get(receiverId);
+                    if (receiverSocketId) {
+                        io.to(receiverSocketId).emit('message_deleted', deletePayload);
+                    }
+                }
+            );
+        });
 
         socket.on('send_message', (data) => {
             const { receiverId, content, media_url, media_type } = data;
@@ -218,7 +298,9 @@ io.on('connection', (socket) => {
                         content: content || null,
                         media_url: media_url || null,
                         media_type: media_type || null,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        is_edited: false,
+                        is_deleted: false
                     };
 
                     // Send back to sender
@@ -236,7 +318,31 @@ io.on('connection', (socket) => {
         socket.on('disconnect', () => {
             connectedUsers.delete(userId);
             console.log(`User ${userId} disconnected.`);
-            io.emit('user_status', { userId, status: 'offline' });
+            const lastSeen = new Date().toISOString();
+            db.query(`UPDATE users SET last_seen = $1 WHERE id = $2`, [lastSeen, userId]);
+            io.emit('user_status', { userId, status: 'offline', lastSeen });
+        });
+
+        // WebRTC Calling Signaling
+        socket.on('call_offer', (data) => {
+            const receiverSocketId = connectedUsers.get(data.to);
+            if (receiverSocketId) io.to(receiverSocketId).emit('call_offer', { ...data, from: userId });
+        });
+        socket.on('call_answer', (data) => {
+            const receiverSocketId = connectedUsers.get(data.to);
+            if (receiverSocketId) io.to(receiverSocketId).emit('call_answer', data);
+        });
+        socket.on('ice_candidate', (data) => {
+            const receiverSocketId = connectedUsers.get(data.to);
+            if (receiverSocketId) io.to(receiverSocketId).emit('ice_candidate', data);
+        });
+        socket.on('call_end', (data) => {
+            const receiverSocketId = connectedUsers.get(data.to);
+            if (receiverSocketId) io.to(receiverSocketId).emit('call_ended');
+        });
+        socket.on('call_rejected', (data) => {
+            const receiverSocketId = connectedUsers.get(data.to);
+            if (receiverSocketId) io.to(receiverSocketId).emit('call_rejected');
         });
     } else {
         socket.disconnect(); // Unauthenticated socket
