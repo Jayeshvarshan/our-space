@@ -574,22 +574,35 @@ document.addEventListener("DOMContentLoaded", async () => {
                     contentHtml = `<a href="${msg.media_url}" target="_blank" class="media-link">📎 View file</a>`;
                 }
             }
-            if (msg.content) {
-                contentHtml += `<div class="message-text">${msg.content}${msg.is_edited ? '<span class="edited-tag"> (edited)</span>' : ''}</div>`;
-            }
-            // Read aloud + Edit/Unsend actions for sent msgs
-            const actionsHtml = `
-                <div class="message-actions">
-                    ${msg.content ? `<button class="action-btn" onclick="readAloud('${msg.content.replace(/'/g, "\\'")}')" title="Read Aloud">🔊</button>` : ''}
-                    ${isSent ? `
-                        <button class="action-btn" onclick="openMessageActions('${msg.id}', '${msg.content ? msg.content.replace(/'/g, "\\'") : ''}')" title="More">⋮</button>
-                    ` : ''}
-                </div>
-            `;
-            contentHtml += actionsHtml;
+            contentHtml += `<div class="message-text">${msg.content}${msg.is_edited ? '<span class="edited-tag"> (edited)</span>' : ''}</div>`;
         }
 
         wrapper.innerHTML = `${avatarHtml}<div class="message-bubble">${contentHtml}</div>`;
+        
+        // Add Long Press / Right Click for Context Menu
+        const bubble = wrapper.querySelector('.message-bubble');
+        let pressTimer;
+
+        const startPress = (e) => {
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            pressTimer = setTimeout(() => {
+                if (!msg.is_deleted) showMsgContextMenu(msg.id, msg.content, isSent, x, y);
+            }, 500);
+        };
+
+        const clearPress = () => clearTimeout(pressTimer);
+
+        bubble.addEventListener('mousedown', startPress);
+        bubble.addEventListener('touchstart', startPress);
+        bubble.addEventListener('mouseup', clearPress);
+        bubble.addEventListener('touchend', clearPress);
+        bubble.addEventListener('touchmove', clearPress);
+        bubble.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (!msg.is_deleted) showMsgContextMenu(msg.id, msg.content, isSent, e.clientX, e.clientY);
+        });
+
         chatMessages.appendChild(wrapper);
     }
 
@@ -602,20 +615,55 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.speechSynthesis.speak(utter);
     };
 
-    // ====== MESSAGE ACTIONS ======
-    window.openMessageActions = (messageId, currentContent) => {
-        const action = prompt("Type 'edit' to change or 'delete' to unsend:");
-        if (action === 'edit') {
-            const newContent = prompt("Enter new message:", currentContent);
-            if (newContent && newContent.trim() !== "" && newContent !== currentContent) {
-                socket.emit('edit_message', { messageId, newContent, receiverId: activeChatUserId });
-            }
-        } else if (action === 'delete') {
-            if (confirm("Unsend this message?")) {
-                socket.emit('unsend_message', { messageId, receiverId: activeChatUserId });
-            }
+    // ====== MESSAGE CONTEXT MENU ======
+    const msgContextMenuOverlay = document.getElementById('msg-context-menu-overlay');
+    const msgContextMenu = document.getElementById('msg-context-menu');
+    let currentCtxMsgId = null;
+    let currentCtxContent = '';
+
+    function showMsgContextMenu(msgId, content, isSent, x, y) {
+        currentCtxMsgId = msgId;
+        currentCtxContent = content;
+        msgContextMenuOverlay.classList.remove('hidden');
+
+        // Hide sent-only buttons if not sent by me
+        const sentOnlyBtns = msgContextMenu.querySelectorAll('.sent-only');
+        sentOnlyBtns.forEach(btn => btn.style.display = isSent ? 'flex' : 'none');
+
+        // Position menu
+        const menuWidth = 200;
+        const menuHeight = 150;
+        let left = x;
+        let top = y;
+
+        if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 20;
+        if (top + menuHeight > window.innerHeight) top = window.innerHeight - menuHeight - 20;
+
+        msgContextMenu.style.position = 'fixed';
+        msgContextMenu.style.left = `${left}px`;
+        msgContextMenu.style.top = `${top}px`;
+    }
+
+    msgContextMenuOverlay.addEventListener('click', () => {
+        msgContextMenuOverlay.classList.add('hidden');
+    });
+
+    document.getElementById('ctx-read-aloud').addEventListener('click', () => {
+        if (currentCtxContent) window.readAloud(currentCtxContent);
+    });
+
+    document.getElementById('ctx-edit').addEventListener('click', () => {
+        const newContent = prompt("Edit your message:", currentCtxContent);
+        if (newContent && newContent.trim() !== "" && newContent !== currentCtxContent) {
+            socket.emit('edit_message', { messageId: currentCtxMsgId, newContent, receiverId: activeChatUserId });
         }
-    };
+    });
+
+    document.getElementById('ctx-unsend').addEventListener('click', () => {
+        if (confirm("Unsend this message?")) {
+            socket.emit('unsend_message', { messageId: currentCtxMsgId, receiverId: activeChatUserId });
+        }
+    });
 
     function updateChatPreview(userId, text, isYou) {
         const previewEl = document.getElementById(`preview-${userId}`);

@@ -184,6 +184,16 @@
             </div>
         </div>
 
+        <!-- ====== MESSAGE CONTEXT MENU ====== -->
+        <div class="modal-overlay hidden" id="msg-context-menu-overlay" style="background: rgba(0,0,0,0.3); backdrop-filter: none;">
+            <div class="context-menu" id="msg-context-menu">
+                <button id="ctx-read-aloud"><i class="ph ph-speaker-high"></i> Read Aloud</button>
+                <div class="ctx-divider"></div>
+                <button id="ctx-edit" class="sent-only"><i class="ph ph-pencil"></i> Edit Message</button>
+                <button id="ctx-unsend" class="sent-only danger"><i class="ph ph-trash"></i> Unsend</button>
+            </div>
+        </div>
+
         <!-- ====== CALL OVERLAY ====== -->
         <div class="call-overlay hidden" id="call-overlay">
             <video id="remote-video" autoplay playsinline class="remote-video"></video>

@@ -487,17 +487,8 @@ body {
     font-size: 13px;
 }
 
-.message-actions {
-    position: absolute;
-    right: -25px;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.message.sent:hover .message-actions {
-    opacity: 1;
+.message.sent:hover .message-bubble {
+    filter: brightness(0.95);
 }
 
 .action-btn {
@@ -707,3 +698,58 @@ body {
 }
 .accept-btn { background: #38a169; color: white; }
 .reject-btn { background: #e53e3e; color: white; }
+
+/* ====== CONTEXT MENU ====== */
+.context-menu {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    min-width: 200px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+    animation: scaleIn 0.15s ease-out;
+    z-index: 1001; /* Ensure it's above the overlay */
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.context-menu button {
+    width: 100%;
+    padding: 14px 18px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    text-align: left;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.context-menu button:hover {
+    background: var(--bg-primary);
+}
+
+.context-menu button i {
+    font-size: 18px;
+    color: var(--accent-pink);
+}
+
+.context-menu button.danger {
+    color: #ff4d4d;
+}
+
+.context-menu button.danger i {
+    color: #ff4d4d;
+}
+
+.ctx-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+}
