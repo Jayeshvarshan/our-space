@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ig-chat-v6';
+const CACHE_NAME = 'ig-chat-v12';
 const urlsToCache = [
     '/',
     '/index.html',
